@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#1a1a2e">
+  <title>積み上げ前</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap');
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    :root {
+      --bg: #14171c;
+      --surface: #1c2128;
+      --surface-hover: #232a33;
+
+      --text: #e8eaed;
+      --text-dim: #a6adbb;
+
+      --border: #313845;
+      
+      --accent: #7aa2f7;
+      --accent-glow: rgba(122, 162, 247, 0.18);
+
+      --success: #8bd5ca;
+      --success-glow: rgba(139, 213, 202, 0.18);
+    }
+
+    html, body {
+      font-family: 'Zen Kaku Gothic New', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100dvh;
+      overflow-x: hidden;
+    }
+
+    body {
+      padding: 0 16px 32px;
+      padding-top: env(safe-area-inset-top, 16px);
+      padding-bottom: calc(env(safe-area-inset-bottom, 16px) + 32px);
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 0;
+      margin-bottom: 8px;
+    }
+
+    .date {
+      font-size: 1.1rem;
+      font-weight: 500;
+      color: var(--text-dim);
+      letter-spacing: 0.05em;
+    }
+
+    .clear-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .clear-btn:active {
+      background: var(--surface);
+      color: var(--text);
+    }
+
+    /* Section styling */
+    .section {
+      margin-bottom: 20px;
+    }
+
+    .label {
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .label .required {
+      color: var(--accent);
+      font-size: 0.6rem;
+    }
+
+    /* Mode selector */
+    .mode-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+    }
+
+    .mode-btn {
+      background: var(--surface);
+      border: 1px solid transparent;
+      color: var(--text-dim);
+      padding: 12px 4px;
+      border-radius: 10px;
+      font-size: 0.85rem;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.15s;
+      text-align: center;
+      box-shadow: 0 1px 0 rgba(255,255,255,0.03);
+    }
+
+    .mode-btn:active {
+      transform: scale(0.95);
+    }
+
+    .mode-btn.selected {
+      border-color: var(--accent);
+      color: var(--text);
+      background: var(--surface);
+    }
+
+    /* Input fields */
+    .input-field {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 16px;
+      color: var(--text);
+      font-size: 1rem;
+      font-family: inherit;
+      resize: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      box-shadow: 0 1px 0 rgba(255,255,255,0.03);
+    }
+
+    .input-field:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    .input-field::placeholder {
+      color: var(--text-dim);
+      opacity: 0.6;
+    }
+
+    .input-field.error {
+      border-color: var(--accent);
+      animation: shake 0.3s ease-in-out;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-4px); }
+      75% { transform: translateX(4px); }
+    }
+
+    /* Tag chips */
+    .tag-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .tag-chip {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      padding: 8px 14px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.15s;
+      box-shadow: 0 1px 0 rgba(255,255,255,0.03);
+    }
+
+    .tag-chip:active {
+      transform: scale(0.95);
+    }
+
+    .tag-chip.selected {
+      background: var(--surface);
+      border-color: var(--success);
+      color: var(--text);
+    }
+
+    .tag-chip.required-tag.selected {
+      background: var(--surface);
+      border-color: var(--accent);
+      color: var(--text);
+    }
+
+    .tag-chip.disabled {
+      opacity: 0.3;
+      pointer-events: none;
+    }
+
+    .selected-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      min-height: 36px;
+      padding: 8px 0;
+    }
+
+    .selected-tag {
+      background: var(--success);
+      color: var(--bg);
+      padding: 6px 12px;
+      border-radius: 16px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .selected-tag .remove {
+      cursor: pointer;
+      opacity: 0.7;
+      font-weight: 700;
+    }
+
+    .tag-count {
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      margin-left: auto;
+    }
+
+    /* Buttons */
+    .btn-container {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 24px;
+    }
+
+    .copy-btn {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 18px;
+      border-radius: 14px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 1px 0 rgba(255,255,255,0.03);
+    }
+
+    .copy-btn:active {
+      transform: scale(0.98);
+    }
+
+    .copy-btn:disabled {
+      background: var(--surface);
+      color: var(--text-dim);
+      box-shadow: none;
+      cursor: not-allowed;
+    }
+
+    .copy-btn.success {
+      background: var(--surface);
+      border-color: var(--accent);
+    }
+
+    .copy-plain {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      padding: 12px;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .copy-plain:active {
+      background: var(--surface);
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: calc(env(safe-area-inset-bottom, 16px) + 100px);
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: var(--surface);
+      border: 1px solid var(--accent);
+      color: var(--text);
+      padding: 12px 24px;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      opacity: 0;
+      transition: all 0.3s ease-out;
+      z-index: 1000;
+      white-space: nowrap;
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    .toast.success {
+      border-color: var(--success);
+    }
+
+    /* Preview */
+    .preview-toggle {
+      background: transparent;
+      border: none;
+      color: var(--text-dim);
+      font-size: 0.8rem;
+      font-family: inherit;
+      cursor: pointer;
+      padding: 8px 0;
+      text-decoration: underline;
+    }
+
+    .preview {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      margin-top: 8px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.85rem;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      color: var(--text-dim);
+      display: none;
+    }
+
+    .preview.show {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="date" id="dateDisplay"></div>
+    <button class="clear-btn" id="clearBtn">クリア</button>
+  </header>
+
+  <main>
+    <!-- Mode -->
+    <section class="section">
+      <div class="label">
+        モード <span class="required">必須</span>
+      </div>
+      <div class="mode-grid" id="modeGrid">
+        <button class="mode-btn" data-mode="観測">観測</button>
+        <button class="mode-btn" data-mode="改修">改修</button>
+        <button class="mode-btn" data-mode="仕込み">仕込み</button>
+        <button class="mode-btn" data-mode="停止">停止</button>
+        <button class="mode-btn" data-mode="迷い">迷い</button>
+      </div>
+    </section>
+
+    <!-- 判断 -->
+    <section class="section">
+      <div class="label">
+        判断 <span class="required">必須</span>
+      </div>
+      <textarea 
+        class="input-field" 
+        id="judgment" 
+        rows="2" 
+        placeholder="例：週末実装は触らず様子を見る"
+      ></textarea>
+    </section>
+
+    <!-- 理由 -->
+    <section class="section">
+      <div class="label">理由 / 引っかかり</div>
+      <textarea 
+        class="input-field" 
+        id="reason" 
+        rows="2" 
+        placeholder="例：コピペ負荷が高くてログが止まりがち"
+      ></textarea>
+    </section>
+
+    <!-- 必須タグ -->
+    <section class="section">
+      <div class="label">
+        タグ <span class="required">必須 1つ</span>
+      </div>
+      <div class="tag-container" id="requiredTagContainer">
+        <button class="tag-chip required-tag" data-tag="#観測">#観測</button>
+        <button class="tag-chip required-tag" data-tag="#改修">#改修</button>
+        <button class="tag-chip required-tag" data-tag="#仕込み">#仕込み</button>
+        <button class="tag-chip required-tag" data-tag="#停止">#停止</button>
+        <button class="tag-chip required-tag" data-tag="#迷い">#迷い</button>
+      </div>
+    </section>
+
+    <!-- 任意タグ -->
+    <section class="section">
+      <div class="label">
+        タグ（任意）
+        <span class="tag-count" id="tagCount">0/3</span>
+      </div>
+      <div class="tag-container" id="optionalTagContainer">
+        <button class="tag-chip" data-tag="#X">#X</button>
+        <button class="tag-chip" data-tag="#note">#note</button>
+        <button class="tag-chip" data-tag="#運用">#運用</button>
+        <button class="tag-chip" data-tag="#設計">#設計</button>
+        <button class="tag-chip" data-tag="#手応え">#手応え</button>
+        <button class="tag-chip" data-tag="#違和感">#違和感</button>
+        <button class="tag-chip" data-tag="#静か">#静か</button>
+        <button class="tag-chip" data-tag="#揺れ">#揺れ</button>
+        <button class="tag-chip" data-tag="#不安">#不安</button>
+      </div>
+    </section>
+
+    <!-- Buttons -->
+    <div class="btn-container">
+      <button class="copy-btn" id="copyBtn">Markdown をコピー</button>
+      <button class="copy-plain" id="copyPlainBtn">プレーンをコピー</button>
+    </div>
+
+    <!-- Preview -->
+    <button class="preview-toggle" id="previewToggle">プレビュー ▼</button>
+    <pre class="preview" id="preview"></pre>
+  </main>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // State
+    let state = {
+      mode: '',
+      judgment: '',
+      reason: '',
+      requiredTag: '',
+      optionalTags: []
+    };
+
+    // Elements
+    const dateDisplay = document.getElementById('dateDisplay');
+    const modeGrid = document.getElementById('modeGrid');
+    const judgmentInput = document.getElementById('judgment');
+    const reasonInput = document.getElementById('reason');
+    const requiredTagContainer = document.getElementById('requiredTagContainer');
+    const optionalTagContainer = document.getElementById('optionalTagContainer');
+    const tagCount = document.getElementById('tagCount');
+    const copyBtn = document.getElementById('copyBtn');
+    const copyPlainBtn = document.getElementById('copyPlainBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const toast = document.getElementById('toast');
+    const preview = document.getElementById('preview');
+    const previewToggle = document.getElementById('previewToggle');
+
+    // Date display
+    function updateDate() {
+      const now = new Date();
+      const days = ['日', '月', '火', '水', '木', '金', '土'];
+      const y = now.getFullYear();
+      const m = String(now.getMonth() + 1).padStart(2, '0');
+      const d = String(now.getDate()).padStart(2, '0');
+      const day = days[now.getDay()];
+      dateDisplay.textContent = `${y}-${m}-${d}（${day}）`;
+    }
+    updateDate();
+
+    // Load from sessionStorage
+    function loadDraft() {
+      const draft = sessionStorage.getItem('minilog-draft');
+      if (draft) {
+        try {
+          const data = JSON.parse(draft);
+          state = { ...state, ...data };
+          
+          // Restore UI
+          if (state.mode) {
+            document.querySelector(`[data-mode="${state.mode}"]`)?.classList.add('selected');
+          }
+          if (state.requiredTag) {
+            document.querySelector(`#requiredTagContainer [data-tag="${state.requiredTag}"]`)?.classList.add('selected');
+          }
+          judgmentInput.value = state.judgment || '';
+          reasonInput.value = state.reason || '';
+          updateOptionalTagChips();
+        } catch (e) {}
+      }
+    }
+    loadDraft();
+
+    // Save to sessionStorage
+    function saveDraft() {
+      sessionStorage.setItem('minilog-draft', JSON.stringify(state));
+      updatePreview();
+    }
+
+    // Mode selection
+    modeGrid.addEventListener('click', (e) => {
+      const btn = e.target.closest('.mode-btn');
+      if (!btn) return;
+      
+      modeGrid.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      state.mode = btn.dataset.mode;
+      saveDraft();
+    });
+
+    // Input handlers
+    judgmentInput.addEventListener('input', () => {
+      state.judgment = judgmentInput.value;
+      judgmentInput.classList.remove('error');
+      saveDraft();
+    });
+
+    reasonInput.addEventListener('input', () => {
+      state.reason = reasonInput.value;
+      saveDraft();
+    });
+
+    // Required tag handling
+    requiredTagContainer.addEventListener('click', (e) => {
+      const chip = e.target.closest('.tag-chip');
+      if (!chip) return;
+      
+      requiredTagContainer.querySelectorAll('.tag-chip').forEach(c => c.classList.remove('selected'));
+      chip.classList.add('selected');
+      state.requiredTag = chip.dataset.tag;
+      saveDraft();
+    });
+
+    // Optional tag handling
+    function updateOptionalTagChips() {
+      optionalTagContainer.querySelectorAll('.tag-chip').forEach(chip => {
+        const tag = chip.dataset.tag;
+        chip.classList.toggle('selected', state.optionalTags.includes(tag));
+        chip.classList.toggle('disabled', state.optionalTags.length >= 3 && !state.optionalTags.includes(tag));
+      });
+      tagCount.textContent = `${state.optionalTags.length}/3`;
+    }
+
+    optionalTagContainer.addEventListener('click', (e) => {
+      const chip = e.target.closest('.tag-chip');
+      if (!chip || chip.classList.contains('disabled')) return;
+      
+      const tag = chip.dataset.tag;
+      const idx = state.optionalTags.indexOf(tag);
+      
+      if (idx >= 0) {
+        state.optionalTags.splice(idx, 1);
+      } else if (state.optionalTags.length < 3) {
+        state.optionalTags.push(tag);
+      }
+      
+      updateOptionalTagChips();
+      saveDraft();
+    });
+
+    // Generate markdown
+    function generateMarkdown() {
+      const now = new Date();
+      const days = ['日', '月', '火', '水', '木', '金', '土'];
+      const y = now.getFullYear();
+      const m = String(now.getMonth() + 1).padStart(2, '0');
+      const d = String(now.getDate()).padStart(2, '0');
+      const day = days[now.getDay()];
+      
+      // 日付 + 空行
+      let md = `${y}-${m}-${d}（${day}）\n\n`;
+      
+      // モード（行末スペース2つ）
+      md += `モード：${state.mode}  \n`;
+      
+      // 判断（行末スペース2つ）
+      md += `判断：${state.judgment.trim()}  \n`;
+      
+      // 理由（空でなければ追加、行末スペース2つ）
+      if (state.reason.trim()) {
+        md += `理由：${state.reason.trim()}  \n`;
+      }
+      
+      // タグ（必須→任意の順、空でなければ追加）
+      const allTags = [state.requiredTag, ...state.optionalTags].filter(Boolean);
+      if (allTags.length > 0) {
+        md += `タグ：${allTags.join(' ')}  \n`;
+      }
+      
+      // 末尾に空行
+      md += '\n';
+      return md;
+    }
+
+    // Generate plain text (1行に潰す)
+    function generatePlain() {
+      const now = new Date();
+      const days = ['日', '月', '火', '水', '木', '金', '土'];
+      const y = now.getFullYear();
+      const m = String(now.getMonth() + 1).padStart(2, '0');
+      const d = String(now.getDate()).padStart(2, '0');
+      const day = days[now.getDay()];
+      
+      // 理由があれば括弧で追加
+      const reasonPart = state.reason.trim() ? `（${state.reason.trim()}）` : '';
+      
+      // タグ部分
+      const allTags = [state.requiredTag, ...state.optionalTags].filter(Boolean);
+      const tagPart = allTags.length > 0 ? ` ${allTags.join(' ')}` : '';
+      
+      // 1行: 日付 モード / 判断（理由） タグ
+      return `${y}-${m}-${d}（${day}） ${state.mode} / ${state.judgment.trim()}${reasonPart}${tagPart}`;
+    }
+
+    // Preview
+    function updatePreview() {
+      if (state.mode && state.judgment.trim() && state.requiredTag) {
+        preview.textContent = generateMarkdown();
+      } else {
+        preview.textContent = '（モード・判断・必須タグを入力するとプレビュー表示）';
+      }
+    }
+    updatePreview();
+
+    previewToggle.addEventListener('click', () => {
+      preview.classList.toggle('show');
+      previewToggle.textContent = preview.classList.contains('show') ? 'プレビュー ▲' : 'プレビュー ▼';
+    });
+
+    // Validation
+    function validate() {
+      if (!state.mode) {
+        showToast('モードを選んで');
+        return false;
+      }
+      if (!state.requiredTag) {
+        showToast('必須タグを選んで');
+        return false;
+      }
+      if (!state.judgment.trim()) {
+        showToast('判断は必須');
+        judgmentInput.classList.add('error');
+        judgmentInput.focus();
+        return false;
+      }
+      return true;
+    }
+
+    // Copy function
+    async function copyToClipboard(text) {
+      try {
+        await navigator.clipboard.writeText(text);
+        return true;
+      } catch {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        try {
+          document.execCommand('copy');
+          return true;
+        } catch {
+          return false;
+        } finally {
+          document.body.removeChild(textarea);
+        }
+      }
+    }
+
+    // Copy button
+    copyBtn.addEventListener('click', async () => {
+      if (!validate()) return;
+      
+      const md = generateMarkdown();
+      const success = await copyToClipboard(md);
+      
+      if (success) {
+        copyBtn.textContent = 'コピー完了 ✓';
+        copyBtn.classList.add('success');
+        showToast('Markdownをコピーしました', true);
+        
+        setTimeout(() => {
+          copyBtn.textContent = 'Markdown をコピー';
+          copyBtn.classList.remove('success');
+        }, 2000);
+      } else {
+        showToast('コピー失敗、手動でコピーして');
+      }
+    });
+
+    copyPlainBtn.addEventListener('click', async () => {
+      if (!validate()) return;
+      
+      const text = generatePlain();
+      const success = await copyToClipboard(text);
+      
+      if (success) {
+        showToast('プレーンテキストをコピーした', true);
+      }
+    });
+
+    // Clear
+    clearBtn.addEventListener('click', () => {
+      state = { mode: '', judgment: '', reason: '', requiredTag: '', optionalTags: [] };
+      modeGrid.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('selected'));
+      requiredTagContainer.querySelectorAll('.tag-chip').forEach(c => c.classList.remove('selected'));
+      judgmentInput.value = '';
+      reasonInput.value = '';
+      updateOptionalTagChips();
+      sessionStorage.removeItem('minilog-draft');
+      updatePreview();
+      showToast('クリアした');
+    });
+
+    // Toast
+    function showToast(message, success = false) {
+      toast.textContent = message;
+      toast.classList.toggle('success', success);
+      toast.classList.add('show');
+      
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 2000);
+    }
+
+    // Focus judgment on load
+    setTimeout(() => {
+      if (!state.judgment) {
+        judgmentInput.focus();
+      }
+    }, 100);
+
+    // Service Worker registration
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    }
+  </script>
+</body>
+</html>
