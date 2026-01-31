@@ -1,8 +1,8 @@
-const CACHE_NAME = 'minilog-v1';
+const CACHE_NAME = 'minilog-v2';
 const ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.json'
+  './',
+  './index.html',
+  './manifest.json'
 ];
 
 // Install
@@ -43,7 +43,7 @@ self.addEventListener('fetch', (event) => {
       });
     }).catch(() => {
       // Offline fallback
-      return caches.match('/index.html');
+      return caches.match('./index.html');
     })
   );
 });
