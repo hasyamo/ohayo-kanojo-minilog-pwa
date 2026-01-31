@@ -1,4 +1,4 @@
-const CACHE_NAME = 'minilog-v2';
+const CACHE_NAME = 'minilog-v3';
 const ASSETS = [
   './',
   './index.html',
