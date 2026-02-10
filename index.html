@@ -407,9 +407,9 @@
       ></textarea>
     </section>
 
-    <!-- 運営メモ -->
+    <!-- note運営メモ -->
     <section class="section">
-      <div class="label">運営メモ（任意）</div>
+      <div class="label">note運営メモ（任意）</div>
       <textarea
         class="input-field"
         id="commentary"
@@ -622,9 +622,9 @@
         md += `理由：${state.reason.trim()}  \n`;
       }
       
-      // 運営メモ（空でなければ追加、行末スペース2つ）
+      // note運営メモ（空でなければ追加、行末スペース2つ）
       if (state.commentary.trim()) {
-        md += `運営メモ：${state.commentary.trim()}  \n`;
+        md += `note運営メモ：${state.commentary.trim()}  \n`;
       }
 
       // タグ（必須→任意の順、空でなければ追加）
@@ -654,10 +654,10 @@
       const allTags = [state.requiredTag, ...state.optionalTags].filter(Boolean);
       const tagPart = allTags.length > 0 ? ` ${allTags.join(' ')}` : '';
       
-      // 運営メモ
+      // note運営メモ
       const commentaryPart = state.commentary.trim() ? ` | ${state.commentary.trim()}` : '';
 
-      // 1行: 日付 モード / 判断（理由） | 運営メモ タグ
+      // 1行: 日付 モード / 判断（理由） | note運営メモ タグ
       return `${y}-${m}-${d}（${day}） ${state.mode} / ${state.judgment.trim()}${reasonPart}${commentaryPart}${tagPart}`;
     }
 
