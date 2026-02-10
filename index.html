@@ -407,6 +407,17 @@
       ></textarea>
     </section>
 
+    <!-- 運営メモ -->
+    <section class="section">
+      <div class="label">運営メモ（任意）</div>
+      <textarea
+        class="input-field"
+        id="commentary"
+        rows="3"
+        placeholder="例：リーチ↑ アクション↑ スキ率→ | 好調日。"
+      ></textarea>
+    </section>
+
     <!-- 必須タグ -->
     <section class="section">
       <div class="label">
@@ -459,6 +470,7 @@
       mode: '',
       judgment: '',
       reason: '',
+      commentary: '',
       requiredTag: '',
       optionalTags: []
     };
@@ -468,6 +480,7 @@
     const modeGrid = document.getElementById('modeGrid');
     const judgmentInput = document.getElementById('judgment');
     const reasonInput = document.getElementById('reason');
+    const commentaryInput = document.getElementById('commentary');
     const requiredTagContainer = document.getElementById('requiredTagContainer');
     const optionalTagContainer = document.getElementById('optionalTagContainer');
     const tagCount = document.getElementById('tagCount');
@@ -507,6 +520,7 @@
           }
           judgmentInput.value = state.judgment || '';
           reasonInput.value = state.reason || '';
+          commentaryInput.value = state.commentary || '';
           updateOptionalTagChips();
         } catch (e) {}
       }
@@ -539,6 +553,11 @@
 
     reasonInput.addEventListener('input', () => {
       state.reason = reasonInput.value;
+      saveDraft();
+    });
+
+    commentaryInput.addEventListener('input', () => {
+      state.commentary = commentaryInput.value;
       saveDraft();
     });
 
@@ -603,6 +622,11 @@
         md += `理由：${state.reason.trim()}  \n`;
       }
       
+      // 運営メモ（空でなければ追加、行末スペース2つ）
+      if (state.commentary.trim()) {
+        md += `運営メモ：${state.commentary.trim()}  \n`;
+      }
+
       // タグ（必須→任意の順、空でなければ追加）
       const allTags = [state.requiredTag, ...state.optionalTags].filter(Boolean);
       if (allTags.length > 0) {
@@ -630,8 +654,11 @@
       const allTags = [state.requiredTag, ...state.optionalTags].filter(Boolean);
       const tagPart = allTags.length > 0 ? ` ${allTags.join(' ')}` : '';
       
-      // 1行: 日付 モード / 判断（理由） タグ
-      return `${y}-${m}-${d}（${day}） ${state.mode} / ${state.judgment.trim()}${reasonPart}${tagPart}`;
+      // 運営メモ
+      const commentaryPart = state.commentary.trim() ? ` | ${state.commentary.trim()}` : '';
+
+      // 1行: 日付 モード / 判断（理由） | 運営メモ タグ
+      return `${y}-${m}-${d}（${day}） ${state.mode} / ${state.judgment.trim()}${reasonPart}${commentaryPart}${tagPart}`;
     }
 
     // Preview
@@ -725,11 +752,12 @@
 
     // Clear
     clearBtn.addEventListener('click', () => {
-      state = { mode: '', judgment: '', reason: '', requiredTag: '', optionalTags: [] };
+      state = { mode: '', judgment: '', reason: '', commentary: '', requiredTag: '', optionalTags: [] };
       modeGrid.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('selected'));
       requiredTagContainer.querySelectorAll('.tag-chip').forEach(c => c.classList.remove('selected'));
       judgmentInput.value = '';
       reasonInput.value = '';
+      commentaryInput.value = '';
       updateOptionalTagChips();
       sessionStorage.removeItem('minilog-draft');
       updatePreview();
