@@ -409,7 +409,7 @@
 
     <!-- note運営メモ -->
     <section class="section">
-      <div class="label">note運営メモ（任意）</div>
+      <div class="label">note運営メモ（任意・前日分）</div>
       <textarea
         class="input-field"
         id="commentary"
@@ -622,9 +622,13 @@
         md += `理由：${state.reason.trim()}  \n`;
       }
       
-      // note運営メモ（空でなければ追加、行末スペース2つ）
+      // note運営メモ（空でなければ追加、前日日付付き、行末スペース2つ）
       if (state.commentary.trim()) {
-        md += `note運営メモ：${state.commentary.trim()}  \n`;
+        const yesterday = new Date(now);
+        yesterday.setDate(yesterday.getDate() - 1);
+        const ym = String(yesterday.getMonth() + 1);
+        const yd = String(yesterday.getDate());
+        md += `note運営メモ（${ym}/${yd}分）：${state.commentary.trim()}  \n`;
       }
 
       // タグ（必須→任意の順、空でなければ追加）
@@ -654,8 +658,15 @@
       const allTags = [state.requiredTag, ...state.optionalTags].filter(Boolean);
       const tagPart = allTags.length > 0 ? ` ${allTags.join(' ')}` : '';
       
-      // note運営メモ
-      const commentaryPart = state.commentary.trim() ? ` | ${state.commentary.trim()}` : '';
+      // note運営メモ（前日日付付き）
+      let commentaryPart = '';
+      if (state.commentary.trim()) {
+        const yesterday = new Date(now);
+        yesterday.setDate(yesterday.getDate() - 1);
+        const ym = String(yesterday.getMonth() + 1);
+        const yd = String(yesterday.getDate());
+        commentaryPart = ` | note運営メモ（${ym}/${yd}分）：${state.commentary.trim()}`;
+      }
 
       // 1行: 日付 モード / 判断（理由） | note運営メモ タグ
       return `${y}-${m}-${d}（${day}） ${state.mode} / ${state.judgment.trim()}${reasonPart}${commentaryPart}${tagPart}`;
