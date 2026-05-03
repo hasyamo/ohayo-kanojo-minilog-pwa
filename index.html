@@ -59,11 +59,41 @@
       margin-bottom: 8px;
     }
 
+    .date-nav {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
     .date {
       font-size: 1.1rem;
       font-weight: 500;
       color: var(--text-dim);
       letter-spacing: 0.05em;
+      min-width: 9.5em;
+      text-align: center;
+    }
+
+    .date-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .date-btn:active {
+      background: var(--surface);
+      color: var(--text);
+    }
+
+    .date-btn:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
     }
 
     .clear-btn {
@@ -364,7 +394,11 @@
 </head>
 <body>
   <header class="header">
-    <div class="date" id="dateDisplay"></div>
+    <div class="date-nav">
+      <button class="date-btn" id="prevDayBtn" aria-label="前日">＜前日</button>
+      <div class="date" id="dateDisplay"></div>
+      <button class="date-btn" id="nextDayBtn" aria-label="翌日">翌日＞</button>
+    </div>
     <button class="clear-btn" id="clearBtn">クリア</button>
   </header>
 
@@ -477,6 +511,8 @@
 
     // Elements
     const dateDisplay = document.getElementById('dateDisplay');
+    const prevDayBtn = document.getElementById('prevDayBtn');
+    const nextDayBtn = document.getElementById('nextDayBtn');
     const modeGrid = document.getElementById('modeGrid');
     const judgmentInput = document.getElementById('judgment');
     const reasonInput = document.getElementById('reason');
@@ -491,17 +527,39 @@
     const preview = document.getElementById('preview');
     const previewToggle = document.getElementById('previewToggle');
 
-    // Date display
+    // Selected date (defaults to today, not persisted)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    let selectedDate = new Date(today);
+
+    const DAYS = ['日', '月', '火', '水', '木', '金', '土'];
+
+    function formatDate(date) {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const d = String(date.getDate()).padStart(2, '0');
+      const day = DAYS[date.getDay()];
+      return `${y}-${m}-${d}（${day}）`;
+    }
+
     function updateDate() {
-      const now = new Date();
-      const days = ['日', '月', '火', '水', '木', '金', '土'];
-      const y = now.getFullYear();
-      const m = String(now.getMonth() + 1).padStart(2, '0');
-      const d = String(now.getDate()).padStart(2, '0');
-      const day = days[now.getDay()];
-      dateDisplay.textContent = `${y}-${m}-${d}（${day}）`;
+      dateDisplay.textContent = formatDate(selectedDate);
+      // Disable 翌日 button when at today (no future)
+      nextDayBtn.disabled = selectedDate.getTime() >= today.getTime();
     }
     updateDate();
+
+    function shiftDate(days) {
+      const next = new Date(selectedDate);
+      next.setDate(next.getDate() + days);
+      if (next.getTime() > today.getTime()) return;
+      selectedDate = next;
+      updateDate();
+      updatePreview();
+    }
+
+    prevDayBtn.addEventListener('click', () => shiftDate(-1));
+    nextDayBtn.addEventListener('click', () => shiftDate(1));
 
     // Load from sessionStorage
     function loadDraft() {
@@ -601,34 +659,23 @@
 
     // Generate markdown
     function generateMarkdown() {
-      const now = new Date();
-      const days = ['日', '月', '火', '水', '木', '金', '土'];
-      const y = now.getFullYear();
-      const m = String(now.getMonth() + 1).padStart(2, '0');
-      const d = String(now.getDate()).padStart(2, '0');
-      const day = days[now.getDay()];
-      
       // 日付 + 空行
-      let md = `${y}-${m}-${d}（${day}）\n\n`;
-      
+      let md = `${formatDate(selectedDate)}\n\n`;
+
       // モード（行末スペース2つ）
       md += `モード：${state.mode}  \n`;
-      
+
       // 判断（行末スペース2つ）
       md += `判断：${state.judgment.trim()}  \n`;
-      
+
       // 理由（空でなければ追加、行末スペース2つ）
       if (state.reason.trim()) {
         md += `理由：${state.reason.trim()}  \n`;
       }
-      
-      // note運営メモ（空でなければ追加、前日日付付き、行末スペース2つ）
+
+      // note運営メモ（空でなければ追加、行末スペース2つ）
       if (state.commentary.trim()) {
-        const yesterday = new Date(now);
-        yesterday.setDate(yesterday.getDate() - 1);
-        const ym = String(yesterday.getMonth() + 1);
-        const yd = String(yesterday.getDate());
-        md += `note運営メモ（${ym}/${yd}分）：${state.commentary.trim()}  \n`;
+        md += `note運営メモ（前日分）：${state.commentary.trim()}  \n`;
       }
 
       // タグ（必須→任意の順、空でなければ追加）
@@ -636,7 +683,7 @@
       if (allTags.length > 0) {
         md += `タグ：${allTags.join(' ')}  \n`;
       }
-      
+
       // 末尾に空行
       md += '\n';
       return md;
@@ -644,32 +691,20 @@
 
     // Generate plain text (1行に潰す)
     function generatePlain() {
-      const now = new Date();
-      const days = ['日', '月', '火', '水', '木', '金', '土'];
-      const y = now.getFullYear();
-      const m = String(now.getMonth() + 1).padStart(2, '0');
-      const d = String(now.getDate()).padStart(2, '0');
-      const day = days[now.getDay()];
-      
       // 理由があれば括弧で追加
       const reasonPart = state.reason.trim() ? `（${state.reason.trim()}）` : '';
-      
+
       // タグ部分
       const allTags = [state.requiredTag, ...state.optionalTags].filter(Boolean);
       const tagPart = allTags.length > 0 ? ` ${allTags.join(' ')}` : '';
-      
-      // note運営メモ（前日日付付き）
-      let commentaryPart = '';
-      if (state.commentary.trim()) {
-        const yesterday = new Date(now);
-        yesterday.setDate(yesterday.getDate() - 1);
-        const ym = String(yesterday.getMonth() + 1);
-        const yd = String(yesterday.getDate());
-        commentaryPart = ` | note運営メモ（${ym}/${yd}分）：${state.commentary.trim()}`;
-      }
+
+      // note運営メモ
+      const commentaryPart = state.commentary.trim()
+        ? ` | note運営メモ（前日分）：${state.commentary.trim()}`
+        : '';
 
       // 1行: 日付 モード / 判断（理由） | note運営メモ タグ
-      return `${y}-${m}-${d}（${day}） ${state.mode} / ${state.judgment.trim()}${reasonPart}${commentaryPart}${tagPart}`;
+      return `${formatDate(selectedDate)} ${state.mode} / ${state.judgment.trim()}${reasonPart}${commentaryPart}${tagPart}`;
     }
 
     // Preview
